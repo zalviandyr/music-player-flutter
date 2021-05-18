@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:music_player/arguments/arguments.dart';
 import 'package:music_player/bloc/bloc.dart';
 import 'package:music_player/event_state/event_state.dart';
 import 'package:music_player/models/models.dart';
@@ -9,7 +8,9 @@ import 'package:music_player/widgets/song_item.dart';
 import 'package:music_player/widgets/widgets.dart';
 
 class PlaylistPage extends StatelessWidget {
-  static String routeName = '/playlist';
+  final Playlist playlist;
+
+  const PlaylistPage({Key? key, required this.playlist}) : super(key: key);
 
   void _songAction(
       Song song, String playlistPath, PlayingBloc playingBloc) async {
@@ -18,9 +19,6 @@ class PlaylistPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final PlaylistArguments args =
-        ModalRoute.of(context)!.settings.arguments as PlaylistArguments;
-    final Playlist playlist = args.playlist;
     final SongBloc songBloc = BlocProvider.of<SongBloc>(context);
     final PlayingBloc playingBloc = BlocProvider.of<PlayingBloc>(context);
 
