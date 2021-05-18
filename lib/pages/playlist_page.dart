@@ -16,25 +16,8 @@ class PlaylistPage extends StatelessWidget {
     playingBloc.add(SongPlay(playlistPath: playlistPath, song: song));
   }
 
-  void _onPlayPause(PlayingBloc playingBloc) {
-    playingBloc.add(SongPlayPause());
-  }
-
-  void _onPrev(PlayingBloc playingBloc) {
-    playingBloc.add(SongPrev());
-  }
-
-  void _onNext(PlayingBloc playingBloc) {
-    playingBloc.add(SongNext());
-  }
-
-  void _onShuffle(PlayingBloc playingBloc) {
-    playingBloc.add(SongShuffle());
-  }
-
   @override
   Widget build(BuildContext context) {
-    final Size screenSize = MediaQuery.of(context).size;
     final PlaylistArguments args =
         ModalRoute.of(context)!.settings.arguments as PlaylistArguments;
     final Playlist playlist = args.playlist;
@@ -46,44 +29,11 @@ class PlaylistPage extends StatelessWidget {
 
     return Scaffold(
       appBar: CustomAppBar(label: 'Playlist'),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              Container(
-                height: screenSize.height * 0.2,
-                width: double.infinity,
-                color: Theme.of(context).primaryColor,
-              ),
-              Expanded(
-                child: Container(
-                  color: Theme.of(context).accentColor,
-                ),
-              )
-            ],
-          ),
-          CustomScrollView(
-            slivers: [
-              _buildHeader(playlist),
-              _buildListSong(playingBloc, playlist.path, _songAction),
-            ],
-          ),
-          BlocBuilder<PlayingBloc, SongState>(
-            builder: (context, state) {
-              return Playing(
-                title: state is SongPlaying
-                    ? state.song.name
-                    : state is SongPausing
-                        ? state.song.name
-                        : 'No song selected',
-                onPlayPause: () => _onPlayPause(playingBloc),
-                onPrev: () => _onPrev(playingBloc),
-                onNext: () => _onNext(playingBloc),
-                onShuffle: () => _onShuffle(playingBloc),
-                isPlaying: state is SongPlaying,
-              );
-            },
-          ),
+      backgroundColor: Colors.transparent,
+      body: CustomScrollView(
+        slivers: [
+          _buildHeader(playlist),
+          _buildListSong(playingBloc, playlist.path, _songAction),
         ],
       ),
     );

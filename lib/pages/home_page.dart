@@ -1,6 +1,5 @@
 import 'dart:io';
 
-// ignore: import_of_legacy_library_into_null_safe
 import 'package:filesystem_picker/filesystem_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -22,7 +21,7 @@ class HomePage extends StatelessWidget {
   }
 
   void _openFileAction(BuildContext context, PlaylistBloc playlistBloc) async {
-    String path = await FilesystemPicker.open(
+    String? path = await FilesystemPicker.open(
       context: context,
       rootDirectory: Directory('/storage/emulated/0/'),
       fsType: FilesystemType.folder,
@@ -33,7 +32,6 @@ class HomePage extends StatelessWidget {
     );
 
     List<String> pathMp3 = [];
-    // ignore: unnecessary_null_comparison
     if (path != null) {
       pathMp3 = await Util.filterMp3(path);
 
@@ -64,87 +62,36 @@ class HomePage extends StatelessWidget {
     }
   }
 
-  void _onPlayPause(PlayingBloc playingBloc) {
-    playingBloc.add(SongPlayPause());
-  }
-
-  void _onPrev(PlayingBloc playingBloc) {
-    playingBloc.add(SongPrev());
-  }
-
-  void _onNext(PlayingBloc playingBloc) {
-    playingBloc.add(SongNext());
-  }
-
-  void _onShuffle(PlayingBloc playingBloc) {
-    playingBloc.add(SongShuffle());
-  }
-
   @override
   Widget build(BuildContext context) {
-    final Size screenSize = MediaQuery.of(context).size;
     final PlaylistBloc playlistBloc = BlocProvider.of<PlaylistBloc>(context);
-    final PlayingBloc playingBloc = BlocProvider.of<PlayingBloc>(context);
 
     // retrieve playlist
     playlistBloc.add(PlaylistRetrieve());
 
     return Scaffold(
       appBar: CustomAppBar(label: 'Music Player'),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              Container(
-                height: screenSize.height * 0.2,
-                width: double.infinity,
-                color: Theme.of(context).primaryColor,
-              ),
-              Expanded(
-                child: Container(
-                  color: Theme.of(context).accentColor,
-                ),
-              )
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 120),
-            child: BlocBuilder<PlaylistBloc, PlaylistState>(
-              builder: (context, state) {
-                if (state is PlaylistRetrieveSuccess) {
-                  return ListView.builder(
-                    itemBuilder: (context, index) {
-                      Playlist playlist = state.listPlaylist[index];
-                      return PlaylistItem(
-                        playlist: playlist,
-                        onTap: () => _playlistAction(context, playlist),
-                      );
-                    },
-                    itemCount: state.listPlaylist.length,
+      backgroundColor: Colors.transparent,
+      body: Padding(
+        padding: const EdgeInsets.only(bottom: 120),
+        child: BlocBuilder<PlaylistBloc, PlaylistState>(
+          builder: (context, state) {
+            if (state is PlaylistRetrieveSuccess) {
+              return ListView.builder(
+                itemBuilder: (context, index) {
+                  Playlist playlist = state.listPlaylist[index];
+                  return PlaylistItem(
+                    playlist: playlist,
+                    onTap: () => _playlistAction(context, playlist),
                   );
-                }
-
-                return SizedBox.shrink();
-              },
-            ),
-          ),
-          BlocBuilder<PlayingBloc, SongState>(
-            builder: (context, state) {
-              return Playing(
-                title: state is SongPlaying
-                    ? state.song.name
-                    : state is SongPausing
-                        ? state.song.name
-                        : 'No song selected',
-                onPlayPause: () => _onPlayPause(playingBloc),
-                onPrev: () => _onPrev(playingBloc),
-                onNext: () => _onNext(playingBloc),
-                onShuffle: () => _onShuffle(playingBloc),
-                isPlaying: state is SongPlaying,
+                },
+                itemCount: state.listPlaylist.length,
               );
-            },
-          ),
-        ],
+            }
+
+            return SizedBox.shrink();
+          },
+        ),
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 120),
