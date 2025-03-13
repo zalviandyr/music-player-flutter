@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           brightness: Brightness.dark,
           primaryColor: Pallette.primaryColor,
-          accentColor: Pallette.accentColor,
+          hintColor: Pallette.accentColor,
         ),
         home: MainPage(),
       ),
@@ -74,7 +74,7 @@ class MainPage extends StatelessWidget {
               ),
               Expanded(
                 child: Container(
-                  color: Theme.of(context).accentColor,
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
               )
             ],

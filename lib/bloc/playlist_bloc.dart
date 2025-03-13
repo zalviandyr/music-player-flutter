@@ -4,58 +4,60 @@ import 'package:music_player/models/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PlaylistBloc extends Bloc<PlaylistEvent, PlaylistState> {
-  PlaylistBloc() : super(PlaylistUninitialized());
+  PlaylistBloc() : super(PlaylistUninitialized()) {
+    on<PlaylistSave>(_onPlaylistSave);
+    on<PlaylistRetrieve>(_onPlaylistRetrieve);
+  }
 
-  @override
-  Stream<PlaylistState> mapEventToState(PlaylistEvent event) async* {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-
+  Future<void> _onPlaylistSave(
+      PlaylistSave event, Emitter<PlaylistState> emit) async {
     try {
-      if (event is PlaylistSave) {
-        List<Playlist> playlist = Playlist.fromJsonToList(
-          sharedPreferences.getStringList(Playlist.sharedPref()),
-        );
+      final sharedPreferences = await SharedPreferences.getInstance();
+      final existingPlaylists = Playlist.fromJsonToList(
+          sharedPreferences.getStringList(Playlist.sharedPref()));
 
-        // save data
-        String dirName = event.dirPath.split('/').last;
-        Playlist saveData = Playlist(
-          name: dirName,
-          path: event.dirPath,
-          countMusic: event.pathMp3.length,
-        );
+      final dirName = event.dirPath.split('/').last;
+      final saveData = Playlist(
+        name: dirName,
+        path: event.dirPath,
+        countMusic: event.pathMp3.length,
+      );
 
-        // avoid duplicate path
-        List<Playlist> newPlaylist = [];
-        playlist.asMap().entries.map((entry) {
-          if (entry.value != saveData) {
-            newPlaylist.add(entry.value);
-          }
-        }).toList();
+      // Hindari duplikasi playlist berdasarkan path
+      final newPlaylist = existingPlaylists
+          .where((playlist) => playlist.path != saveData.path)
+          .toList();
 
-        newPlaylist.add(saveData);
+      newPlaylist.add(saveData);
 
-        sharedPreferences.setStringList(
-          Playlist.sharedPref(),
-          Playlist.fromListToListString(newPlaylist),
-        );
+      await sharedPreferences.setStringList(
+        Playlist.sharedPref(),
+        Playlist.fromListToListString(newPlaylist),
+      );
 
-        yield PlaylistRetrieveSuccess(listPlaylist: newPlaylist);
-      }
+      emit(PlaylistRetrieveSuccess(listPlaylist: newPlaylist));
+    } catch (e, trace) {
+      onError(e, trace);
 
-      if (event is PlaylistRetrieve) {
-        List<Playlist> listPlaylist = [];
-        List<String> playlist =
-            sharedPreferences.getStringList(Playlist.sharedPref()) ?? [];
+      emit(PlaylistError());
+    }
+  }
 
-        for (String data in playlist) {
-          listPlaylist.add(Playlist.fromJson(data));
-        }
+  Future<void> _onPlaylistRetrieve(
+      PlaylistRetrieve event, Emitter<PlaylistState> emit) async {
+    try {
+      final sharedPreferences = await SharedPreferences.getInstance();
+      final playlistData =
+          sharedPreferences.getStringList(Playlist.sharedPref()) ?? [];
 
-        yield PlaylistRetrieveSuccess(listPlaylist: listPlaylist);
-      }
-    } catch (e) {
-      print(e);
-      yield PlaylistError();
+      final listPlaylist =
+          playlistData.map((data) => Playlist.fromJson(data)).toList();
+
+      emit(PlaylistRetrieveSuccess(listPlaylist: listPlaylist));
+    } catch (e, trace) {
+      onError(e, trace);
+
+      emit(PlaylistError());
     }
   }
 }

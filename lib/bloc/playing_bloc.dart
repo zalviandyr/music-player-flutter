@@ -8,120 +8,110 @@ import 'package:music_player/models/models.dart';
 
 class PlayingBloc extends Bloc<SongEvent, SongState> {
   final AudioPlayer _audioPlayer = AudioPlayer();
-  List<String> filterMp3 = [];
+  List<String> _filterMp3 = [];
 
   PlayingBloc() : super(SongUninitialized()) {
     _init();
+    on<SongPlay>(_onSongPlay);
+    on<SongPlayPause>(_onSongPlayPause);
+    on<SongNext>(_onSongNext);
+    on<SongPrev>(_onSongPrev);
+    on<SongShuffle>(_onSongShuffle);
+    on<SongAutoMove>(_onSongAutoMove);
   }
 
   void _init() {
-    // to handle prev, next and song auto next
     _audioPlayer.currentIndexStream.listen((event) {
       if (event != null) {
-        this.add(SongAutoMove(index: event));
+        add(SongAutoMove(index: event));
       }
     });
   }
 
-  @override
-  Stream<SongState> mapEventToState(SongEvent event) async* {
+  Future<void> _onSongPlay(SongPlay event, Emitter<SongState> emit) async {
     try {
-      if (event is SongPlay) {
-        Song currentSong = event.song;
-        String path = event.playlistPath;
-        filterMp3 = await Util.filterMp3(path);
+      final currentSong = event.song;
+      final path = event.playlistPath;
 
-        // add song path
-        filterMp3.insert(0, currentSong.path);
+      _filterMp3 = await Util.filterMp3(path);
+      _filterMp3.insert(0, currentSong.path);
+      _filterMp3 = _filterMp3.toSet().toList(); // Remove duplicate
 
-        // remove duplicate
-        filterMp3 = filterMp3.toSet().toList();
+      await _createPlaylist(_filterMp3);
 
-        await _createPlaylist(filterMp3);
+      await _audioPlayer.stop();
+      await _audioPlayer.play();
 
-        // stop and play
-        await _audioPlayer.stop();
-        _audioPlayer.play();
+      emit(SongPlaying(song: currentSong));
+    } catch (e, trace) {
+      onError(e, trace);
 
-        yield SongPlaying(song: currentSong);
+      emit(SongError());
+    }
+  }
+
+  Future<void> _onSongPlayPause(
+      SongPlayPause event, Emitter<SongState> emit) async {
+    try {
+      if (state is SongPlaying) {
+        await _audioPlayer.pause();
+        emit(SongPausing(song: (state as SongPlaying).song));
+      } else if (state is SongPausing) {
+        await _audioPlayer.play();
+        emit(SongPlaying(song: (state as SongPausing).song));
       }
+    } catch (e, trace) {
+      onError(e, trace);
 
-      if (event is SongPlayPause) {
-        if (state is SongPlaying) {
-          await _audioPlayer.pause();
-          yield SongPausing(song: (state as SongPlaying).song);
-        } else if (state is SongPausing) {
-          _audioPlayer.play();
-          yield SongPlaying(song: (state as SongPausing).song);
-        }
+      emit(SongError());
+    }
+  }
+
+  Future<void> _onSongNext(SongNext event, Emitter<SongState> emit) async {
+    if (_filterMp3.isNotEmpty && state is SongPlaying) {
+      await _audioPlayer.seekToNext();
+    }
+  }
+
+  Future<void> _onSongPrev(SongPrev event, Emitter<SongState> emit) async {
+    if (_filterMp3.isNotEmpty && state is SongPlaying) {
+      await _audioPlayer.seekToPrevious();
+    }
+  }
+
+  Future<void> _onSongShuffle(
+      SongShuffle event, Emitter<SongState> emit) async {
+    if (_filterMp3.isNotEmpty && state is SongPlaying) {
+      _filterMp3.shuffle(Random(DateTime.now().millisecond));
+      await _createPlaylist(_filterMp3);
+      await _audioPlayer.stop();
+      await _audioPlayer.play();
+
+      if (_audioPlayer.currentIndex == 0) {
+        final mp3 = _filterMp3.first;
+        final song = Song(name: Util.getNameSong(mp3), path: mp3);
+        emit(SongPlaying(song: song));
       }
+    }
+  }
 
-      if (event is SongNext) {
-        if (filterMp3.isNotEmpty && state is SongPlaying) {
-          await _audioPlayer.seekToNext();
+  Future<void> _onSongAutoMove(
+      SongAutoMove event, Emitter<SongState> emit) async {
+    if (_filterMp3.isNotEmpty && state is SongPlaying) {
+      final song = Song(
+        name: Util.getNameSong(_filterMp3[event.index]),
+        path: _filterMp3[event.index],
+      );
 
-          // yield handle in currentIndexStream
-        }
-      }
-
-      if (event is SongPrev) {
-        if (filterMp3.isNotEmpty && state is SongPlaying) {
-          await _audioPlayer.seekToPrevious();
-
-          // yield handle in currentIndexStream
-        }
-      }
-
-      if (event is SongShuffle) {
-        if (filterMp3.isNotEmpty && state is SongPlaying) {
-          // random base on millis
-          filterMp3.shuffle(Random(DateTime.now().millisecond));
-
-          // replay song
-          await _createPlaylist(filterMp3);
-
-          // stop and play
-          await _audioPlayer.stop();
-          _audioPlayer.play();
-
-          // handle first song in new playlist
-          // if not first, then SongPlaying will emit on currentIndexStream
-          if (_audioPlayer.currentIndex == 0) {
-            // get current song
-            String mp3 = filterMp3.first;
-            Song song = Song(name: Util.getNameSong(mp3), path: mp3);
-
-            yield SongPlaying(song: song);
-          }
-        }
-      }
-
-      if (event is SongAutoMove) {
-        if (filterMp3.isNotEmpty && state is SongPlaying) {
-          Song song = Song(
-            name: Util.getNameSong(filterMp3[event.index]),
-            path: filterMp3[event.index],
-          );
-
-          yield SongPlaying(song: song);
-        }
-      }
-    } catch (e) {
-      print(e);
-      yield SongError();
+      emit(SongPlaying(song: song));
     }
   }
 
   Future<void> _createPlaylist(List<String> playlist) async {
-    List<AudioSource> audioSources = [];
-    for (String mp3 in playlist) {
-      audioSources.add(AudioSource.uri(Uri.parse(mp3)));
-    }
-
+    final audioSources =
+        playlist.map((mp3) => AudioSource.uri(Uri.parse(mp3))).toList();
     await _audioPlayer
         .setAudioSource(ConcatenatingAudioSource(children: audioSources));
-
-    // set loop
     await _audioPlayer.setLoopMode(LoopMode.all);
   }
 }

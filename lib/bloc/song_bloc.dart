@@ -4,25 +4,26 @@ import 'package:music_player/helper/util.dart';
 import 'package:music_player/models/models.dart';
 
 class SongBloc extends Bloc<SongEvent, SongState> {
-  SongBloc() : super(SongUninitialized());
+  SongBloc() : super(SongUninitialized()) {
+    on(_onSongRetrieve);
+  }
 
-  @override
-  Stream<SongState> mapEventToState(SongEvent event) async* {
+  Future<void> _onSongRetrieve(
+      SongRetrieve event, Emitter<SongState> emit) async {
     try {
-      if (event is SongRetrieve) {
-        String path = event.playlistPath;
-        List<String> filterMp3 = await Util.filterMp3(path);
+      String path = event.playlistPath;
+      List<String> filterMp3 = await Util.filterMp3(path);
 
-        List<Song> songs = [];
-        for (String mp3 in filterMp3) {
-          songs.add(Song(name: Util.getNameSong(mp3), path: mp3));
-        }
-
-        yield SongRetrieveSuccess(songs: songs);
+      List<Song> songs = [];
+      for (String mp3 in filterMp3) {
+        songs.add(Song(name: Util.getNameSong(mp3), path: mp3));
       }
-    } catch (e) {
-      print(e);
-      yield SongError();
+
+      emit(SongRetrieveSuccess(songs: songs));
+    } catch (e, trace) {
+      onError(e, trace);
+
+      emit(SongError());
     }
   }
 }

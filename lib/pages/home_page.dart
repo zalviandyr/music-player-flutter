@@ -48,8 +48,8 @@ class _HomePageState extends State<HomePage> {
                     onPressed: () => Navigator.of(context).pop(),
                     child: Text('Ok'),
                     style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(
-                          Theme.of(context).accentColor),
+                      backgroundColor: WidgetStateProperty.all(
+                          Theme.of(context).colorScheme.secondary),
                     ),
                   ),
                 ],
@@ -62,7 +62,7 @@ class _HomePageState extends State<HomePage> {
         rootDirectory: Directory('/storage/emulated/0/'),
         fsType: FilesystemType.folder,
         pickText: 'Choose folder contains .mp3',
-        folderIconColor: Theme.of(context).accentColor,
+        folderIconColor: Theme.of(context).colorScheme.secondary,
         requestPermission: () async =>
             await Permission.storage.request().isGranted,
       );

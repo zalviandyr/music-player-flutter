@@ -31,7 +31,7 @@ class Playing extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             Theme.of(context).primaryColor,
-            Theme.of(context).accentColor,
+            Theme.of(context).colorScheme.secondary,
           ],
           end: Alignment.bottomCenter,
         ),
@@ -42,7 +42,7 @@ class Playing extends StatelessWidget {
             height: 25,
             child: Marquee(
               text: title,
-              style: Theme.of(context).textTheme.bodyText1!.copyWith(
+              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                     fontWeight: FontWeight.bold,
                     fontSize: 20.0,
                     letterSpacing: 1.5,
@@ -68,7 +68,7 @@ class Playing extends StatelessWidget {
                 onPressed: onPrev,
                 gradient: [
                   Theme.of(context).primaryColor,
-                  Theme.of(context).accentColor,
+                  Theme.of(context).colorScheme.secondary,
                 ],
               ),
               CustomButton(
@@ -81,7 +81,7 @@ class Playing extends StatelessWidget {
                       ]
                     : [
                         Theme.of(context).primaryColor,
-                        Theme.of(context).accentColor,
+                        Theme.of(context).colorScheme.secondary,
                       ],
               ),
               CustomButton(
@@ -89,7 +89,7 @@ class Playing extends StatelessWidget {
                 onPressed: onNext,
                 gradient: [
                   Theme.of(context).primaryColor,
-                  Theme.of(context).accentColor,
+                  Theme.of(context).colorScheme.secondary,
                 ],
               ),
               MaterialButton(

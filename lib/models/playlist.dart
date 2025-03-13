@@ -23,7 +23,7 @@ class Playlist extends Equatable {
         countMusic: data['count_music']);
   }
 
-  static List<Playlist> fromJsonToList(dynamic? json) {
+  static List<Playlist> fromJsonToList(dynamic json) {
     List<Playlist> playlist = [];
 
     if (json != null) {

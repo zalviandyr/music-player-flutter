@@ -28,7 +28,7 @@ class SongItem extends StatelessWidget {
                   onPressed: onTap,
                   gradient: [
                     Theme.of(context).primaryColor,
-                    Theme.of(context).accentColor,
+                    Theme.of(context).colorScheme.secondary,
                   ],
                 ),
                 const SizedBox(width: 10.0),
